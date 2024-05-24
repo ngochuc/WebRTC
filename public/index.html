@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebRTC Host</title>
+</head>
+<body>
+    <h1>WebRTC Host</h1>
+    <button id="startCallBtn" onclick="startCall()" disabled>Start Call</button>
+    <div id="videosContainer"></div>
+
+    <script src="/socket.io/socket.io.js"></script>
+
+    <script>
+        const socket = io();
+        const videosContainer = document.getElementById('videosContainer');
+        let isHost = false;
+
+        // Xử lý sự kiện host được chỉ định
+        socket.on('assignedHost', () => {
+            console.log('You are now the host');
+            isHost = true;
+            document.getElementById('startCallBtn').removeAttribute('disabled');
+        });
+
+        // Xử lý sự kiện khi có yêu cầu bắt đầu cuộc gọi từ host
+        socket.on('startCallRequest', () => {
+            if (confirm('Host wants to start a call. Do you accept?')) {
+                socket.emit('startCallAccepted');
+            }
+        });
+
+        // Xử lý sự kiện khi host bắt đầu cuộc gọi
+        socket.on('startCall', () => {
+            console.log('Host started the call');
+            // Xử lý các bước tiếp theo để thiết lập kết nối WebRTC và bắt đầu cuộc gọi
+            // ...
+        });
+
+        // Xử lý sự kiện khi có peer mới tham gia
+        socket.on('peerJoined', () => {
+            console.log('A peer joined the room');
+        });
+
+        // Xử lý sự kiện khi có peer rời khỏi
+        socket.on('peerLeft', () => {
+            console.log('A peer left the room');
+        });
+
+        // Gửi yêu cầu trở thành host
+        socket.emit('requestHost');
+
+        // Bắt đầu cuộc gọi
+        function startCall() {
+            if (isHost) {
+                socket.emit('startCall');
+            } else {
+                alert('Only host can start the call');
+            }
+        }
+    </script>
+</body>
+</html>
