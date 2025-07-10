@@ -1,0 +1,1206 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+  <script src="https://cdn.hoclieuthongminh.com/lib/swa/sweetalert2.all.min.js"></script>
+  <title>Call Video</title>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+  <link href="https://cdn.hoclieuthongminh.com/lib/bootstrap-5.3.3-dist/css/bootstrap.min.css" rel="stylesheet" />
+  <script src="https://cdn.hoclieuthongminh.com/lib/bootstrap-5.3.3-dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.9/angular.min.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.9/angular-sanitize.js"></script>
+  <link rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.5/font/bootstrap-icons.min.css"
+    integrity="sha512-ZnR2wlLbSbr8/c9AgLg3jQPAattCUImNsae6NHYnS9KrIwRdcY9DxFotXhNAKIKbAXlRnujIqUWoXXwqyFOeIQ=="
+    crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <script src="https://kit.fontawesome.com/ffc7568fc5.js" crossorigin="anonymous"></script>
+  <style>
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
+        "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans",
+        "Helvetica Neue", sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      user-select: none;
+    }
+
+    #streams_wrap {
+      height: 90vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 10px;
+      flex-wrap: wrap;
+      flex: 1;
+      flex-wrap: wrap;
+    }
+
+    .video_stream_wrap {
+      min-width: 45%;
+      background-color: #eee;
+      justify-content: center;
+      align-items: center;
+      display: flex;
+      flex-direction: column;
+      margin-bottom: 10px;
+      position: relative;
+      margin: 5px;
+      height: 90%;
+      border-radius: 14px;
+    }
+
+    .video_player_wrap {
+      /* padding: 15px; */
+      width: 100%;
+      height: 100%;
+      border-radius: 10px;
+    }
+
+    @media only screen and (max-width: 1000px) {
+      .video_stream_wrap {
+        width: 49%;
+      }
+    }
+
+    @media only screen and (max-width: 700px) {
+      .video_stream_wrap {
+        width: 99%;
+        height: 50%;
+      }
+
+      #local_video_stream_id {
+        width: 50% !important;
+        height: 20%;
+      }
+    }
+
+    .user_name_wrap {
+      background-color: #eee;
+      border-radius: 10px;
+      padding: 2px 5px;
+      font-size: 12px;
+      font-style: italic;
+      margin-right: 5px;
+    }
+
+    .bottom_absolute_wrap {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 50px;
+      background-color: rgba(96, 96, 96, 0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+    }
+
+    .absolute_wrap {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      right: 0;
+      left: 0;
+      z-index: 5;
+      background-color: black;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      flex: 1;
+      width: 100%;
+      height: 100%;
+      display: none;
+      border-radius: 14px;
+    }
+
+    .absolute_wrap h3 {
+      font-size: 15px;
+      font-weight: 700;
+      text-align: center;
+      color: black;
+      background-color: #eee;
+      padding: 2px 10px;
+      border-radius: 10px;
+      display: inline-block;
+      text-align: center;
+    }
+
+    .absolute_wrap h4 {
+      font-size: 10px;
+      text-align: center;
+      color: #fff;
+      font-style: italic;
+    }
+
+    .actived-btn {
+      cursor: pointer;
+      padding: 1px;
+      background-color: transparent;
+      color: #fff;
+      border-radius: 100%;
+      border: none;
+      outline: none;
+      font-size: 15px;
+      margin: 0 5px;
+    }
+
+    .end_call_button {
+      padding: 2px 10px;
+      display: inline-block;
+      background-color: red;
+      border-radius: 10px;
+      border: none;
+      outline: none;
+      color: #fff;
+      font-weight: 700;
+      display: flex;
+      /* justify-content: space-between; */
+      align-items: center;
+    }
+
+    .actived-btn span {
+      font-size: 18px;
+      color: #fff;
+    }
+
+    .modal-waiting {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0, 0, 0, 0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 100;
+      display: none;
+    }
+
+    .modal-waiting-content {
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 10px;
+    }
+
+    .button-container {
+      position: fixed;
+      bottom: 20px;
+      left: 40%;
+    }
+
+    @media (max-width: 768px) {
+      .remoteVideo {
+        height: 100vh;
+        max-width: 100%;
+      }
+
+      .localVideo {
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 250px;
+        border-radius: 22px;
+        height: 180px;
+      }
+
+      /* Dưới 768px cho màn hình di động */
+      .button-container {
+        left: 0;
+        /* Đặt lại vị trí sang bên trái */
+        right: 0;
+        /* Đặt right sang 0 để căn giữa */
+        justify-content: space-around;
+        /* Giãn cách các nút đều nhau */
+      }
+
+      .button-container button {
+        flex: 1;
+        /* Các nút sẽ có chiều rộng bằng nhau */
+        max-width: 100px;
+        padding: 5px;
+        /* Chiều rộng tối đa để đảm bảo vừa màn hình */
+      }
+    }
+
+    #startCallBtn {
+      display: none;
+    }
+
+    #stopCallBtn {
+      background-color: #f44336;
+      color: white;
+      padding: 10px 25px;
+      border: none;
+      border-radius: 16px;
+      cursor: pointer;
+    }
+
+    #offCamera {
+      background: #f44336;
+      color: white;
+      padding: 10px 25px;
+      border: none;
+      border-radius: 16px;
+      cursor: pointer;
+    }
+
+    #onCamera {
+      background: rgba(102, 102, 102, 1);
+      color: white;
+      padding: 10px 25px;
+      border: none;
+      border-radius: 16px;
+      cursor: pointer;
+    }
+
+    #uploadFile {
+      display: none;
+      background: rgba(102, 102, 102, 1);
+      color: white;
+      padding: 10px 25px;
+      border: none;
+      border-radius: 16px;
+      cursor: pointer;
+    }
+
+    #onVoice {
+      background: rgba(102, 102, 102, 1);
+      color: white;
+      padding: 10px 25px;
+      border: none;
+      border-radius: 16px;
+      cursor: pointer;
+    }
+
+    #offVoice {
+      background: #f44336;
+      color: white;
+      padding: 10px 25px;
+      border: none;
+      border-radius: 16px;
+      cursor: pointer;
+    }
+
+    #addFriend {
+      display: none;
+      background: rgba(102, 102, 102, 1);
+      color: white;
+      padding: 10px 25px;
+      border: none;
+      border-radius: 16px;
+      cursor: pointer;
+    }
+
+    .text-you {
+      background-color: #d5f1ea;
+      color: rgb(88, 86, 86);
+      border-radius: 10px;
+      font-size: 14px;
+      padding: 2px 5px;
+    }
+
+    .disabled-video {
+      position: absolute;
+      background-color: rgb(2, 2, 2);
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+
+    .disabled-video-content {
+      padding: 20px;
+      border-radius: 10px;
+    }
+
+    #local_video_stream_id {
+      position: absolute;
+      cursor: grab;
+      display: none;
+      top: 0;
+      right: 0;
+      z-index: 99999;
+      width: 300px;
+    }
+
+    .material-symbols-outlined {
+      color: #eee;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="streams_wrap">
+    <div id="local_video_stream_id" class="">
+      <div class="text-ping" style="position: absolute; top: 0; right: 0"></div>
+      <video id="localVideo" class="localVideo" muted autoplay></video>
+      <div style="display: none" class="absolute_wrap">
+        <h3 class="user_name_wrap_offvid"></h3>
+        <h4>Video Disable</h4>
+      </div>
+      <div class="bottom_absolute_wrap">
+        <span class="text-you">Me</span>
+        <h5 class="user_name_wrap d-none"></h5>
+        <button onclick="handleEndCall()" class="btn end_call_button d-none">
+          <span style="margin: 3px" class="material-symbols-outlined">
+            call_end
+          </span>
+          End call
+        </button>
+        <button onclick="handleMuteUnMute()" class="btn d-none">
+          <span id="audio-control" class="material-symbols-outlined">mic_off</span>
+        </button>
+        <button onclick="handleVideoOnOff()" class="btn d-none">
+          <span id="video-control" class="material-symbols-outlined">
+            desktop_windows
+          </span>
+        </button>
+        <button onclick="handleScreenShareOnOff()" class="btn" style="display: none">
+          <span id="control-screen-share" class="material-symbols-outlined">stop_screen_share</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="disabled-video d-none">
+    <div class="disabled-video-content">
+      <div class="avatar"></div>
+    </div>
+  </div>
+
+  <div class="modal-waiting d-none">
+    <div class="modal-waiting-content">
+      <h1>Waiting for host to start the call</h1>
+    </div>
+  </div>
+
+  <div class="d-flex justify-content-center align-items-center button-container d-none"
+    style="position: fixed; bottom: 20px; z-index: 9999">
+    <button class="ms-2" id="addFriend">
+      <i class="fa-solid fa-user-plus fs-5"></i>
+    </button>
+    <button class="ms-2" id="uploadFile">
+      <i class="fa-solid fa-arrow-up-from-bracket fs-5"></i>
+    </button>
+    <button class="ms-2 handle-video" id="onCamera">
+      <i class="fa-solid fa-video fs-5"></i>
+    </button>
+    <button class="ms-2 handle-video d-none" id="offCamera">
+      <i class="fa-solid fa-video-slash fs-5"></i>
+    </button>
+    <button class="ms-2  d-none" onclick="handleMuteUnMute()" id="onVoice">
+      <i class="fa-solid fa-microphone-lines fs-5"></i>
+    </button>
+    <button class="ms-2" onclick="handleMuteUnMute()" id="offVoice">
+      <i class="fa-solid fa-microphone-lines-slash fs-5"></i>
+    </button>
+    <button class="ms-2 btn-cancel" id="stopCallBtn" onclick="handleEndCall()">
+      <i class="fa-solid fa-phone-slash fs-5"></i>
+    </button>
+  </div>
+  <button type="button" class="btn btn-primary btn-waiting-call d-none" data-bs-toggle="modal"
+    data-bs-target="#waiting_call">
+    Launch demo modal
+  </button>
+
+  <div class="modal fade" id="waiting_call" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+    aria-labelledby="staticBackdropLabel" aria-hidden="true">
+    <div class="modal-dialog modal-fullscreen modal-dialog-centered">
+      <div class="modal-content " style="font-family: cursive">
+        <div class="modal-body bg-dark d-flex justify-content-center align-items-center">
+          <div class="text-center">
+            <img class="image-receiver" src="" alt="" width="50" height="50" style="border-radius: 50%;">
+            <p class="fw-bold fs-3 receiver-name text-light"></p>
+            <p class="text-light fs-6">Đang gọi...</p>
+          </div>
+          <div class="bg-dark" style="position: absolute; bottom: 15px; left: 50%">
+            <button type="button" class="btn btn-cancel text-light"
+              style="background: rgba(241, 63, 63, 1);padding: 10px 25px;border: none;border-radius: 16px;cursor: pointer;"
+              data-bs-dismiss="modal"><i class="fa-solid fa-phone-slash fs-5"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <button type="button" class="btn btn-primary btn-confirm d-none" data-bs-toggle="modal"
+    data-bs-target="#staticBackdrop">
+    Modal
+  </button>
+
+  <!-- Modal -->
+  <div class="modal fade" id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+    aria-labelledby="staticBackdropLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content" style="font-family: cursive">
+        <div class="modal-body bg-light rounded p-5" style="border: 1px solid rgba(0, 0, 0, 1)">
+          <div class="text-center">
+            <img class="image-host" src="" width="100" height="100" style="border-radius: 50%;">
+            <p class="fw-bold text-dark fs-4 text-title-call">Bạn có muốn tham gia cuộc gọi không?</p>
+          </div>
+          <div class="d-flex justify-content-around align-items-center bg-light">
+            <button type="button" class="btn text-light btn-cancel p-3 actived-btn" data-bs-dismiss="modal"
+              style="background: rgba(241, 63, 63, 1);">
+              <i class="fa-solid fa-x fs-5 fw-bold"></i>
+            </button>
+            <button type="button" class="btn btn-confirmed p-3 text-light actived-btn"
+              style="background: rgba(77, 188, 25, 1);">
+              <i class="fa-solid fa-video fs-5 fw-bold"></i>
+            </button>
+          </div>
+          <div class="d-flex justify-content-around align-items-center bg-light mt-3"
+            style="font-family: cursive;font-size: 18px;font-weight: 400;line-height: 22.68px;color: rgba(131, 129, 129, 1);">
+            <a>Từ chối</a>
+            <a>Chấp nhận</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- scripts -->
+  <script src="https://cdn.socket.io/4.6.0/socket.io.min.js"></script>
+  <script>
+    const url = window.location.href;
+    let isEmbed = false;
+    let socket = null;
+    let localUserName = null;
+    let localStream = null;
+    let localScreenShare = null;
+    let localVideoStreamType = "video";
+    let remoteStreams = {};
+    var call_domain = 'http://localhost:9000';
+    // var call_domain = 'https://call.baitap365.com';
+
+    console.log("url", call_domain);
+    const token = window.localStorage.getItem("token");
+    var current_user;;
+    if (token != null) {
+      current_user = parseJwt(token);
+      $.ajaxSetup({ headers: { "Authorization": 'Bearer ' + token } });
+    }
+    //   peer stun config
+    var peerConnectionConfig = {
+      iceServers: [
+        { urls: "stun:stun.stunprotocol.org:3478" },
+        { urls: "stun:stun.l.google.com:19302" }
+      ]
+    };
+
+
+    if (url.includes("embed")) {
+      isEmbed = true;
+    }
+
+    console.log("isEmbed", isEmbed);
+    let hostId;
+    const urlParams = new URLSearchParams(window.location.search);
+    const userId = Math.random().toString(36);
+    const userName = current_user?.first_name + " " + current_user?.last_name;
+    const typeCall = urlParams.get("typeCall");
+    const conversationId = urlParams.get("conversationId");
+    if (typeCall) {
+      var constraints = {
+        video: {
+          width: { max: 1920 },
+          height: { max: 1080 },
+          frameRate: { max: 120 }
+        },
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true
+        }
+      }
+    } else {
+      var constraints = {
+        video: false,
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true
+        }
+      }
+    }
+    let avatar = current_user?.avatar;
+    let groupCalls;
+    let getDisplayName;
+    $(document).ready(function () {
+      startVideo();
+      if (typeCall == 'voice') {
+        // $('.handle-video').click();
+        const videoControlDiv = document.getElementById("video-control");
+        localVideoStreamType = "none";
+        videoControlDiv.innerHTML = "desktop_access_disabled";
+        disenAbsoluteWrap("", true);
+        $('.btn-confirmed').find('i').removeClass('fa-video').addClass('fa-phone');
+        $("#offCamera").removeClass("d-none");
+        $("#onCamera").addClass("d-none");
+      }
+    })
+
+    $(document).on('click', '.btn-cancel', function () {
+      window.close();
+    });
+
+    $(document).on('click', '.btn-confirmed', function () {
+      userAcceptCall();
+      $('.button-container').removeClass('d-none');
+      $('.video_stream_wrap').removeClass('d-none');
+      $('#staticBackdrop').modal('hide');
+    });
+
+    function startVideo() {
+      getDisplayName = userName;
+      localUserName = `${getDisplayName}(Me)`;
+
+      if (getDisplayName && getDisplayName.trim().length > 0) {
+        navigator.mediaDevices.enumerateDevices().then((devices) => {
+          const hasVideoInput = devices.some((device) => device.kind === "videoinput");
+          const hasAudioInput = devices.some((device) => device.kind === "audioinput");
+
+          if (!hasVideoInput && !hasAudioInput) {
+            console.error("Không tìm thấy thiết bị video và âm thanh! Vui lòng kiểm tra lại thiết bị video và âm thanh của bạn.");
+            Swal.fire({
+              icon: 'error',
+              title: 'Oops...',
+              text: 'Không tìm thấy thiết bị video và âm thanh! Vui lòng kiểm tra lại thiết bị video và âm thanh của bạn.',
+            })
+            return;
+          } else if (!hasVideoInput) {
+            console.error("Không tìm thấy thiết bị video! Vui lòng kiểm tra lại thiết bị video của bạn.");
+            Swal.fire({
+              icon: 'error',
+              title: 'Oops...',
+              text: 'Không tìm thấy thiết bị video! Vui lòng kiểm tra lại thiết bị video của bạn.',
+            })
+          } else if (!hasAudioInput) {
+            console.error("Không tìm thấy thiết bị âm thanh! Vui lòng kiểm tra lại thiết bị âm thanh của bạn.");
+            Swal.fire({
+              icon: 'error',
+              title: 'Oops...',
+              text: 'Không tìm thấy thiết bị âm thanh! Vui lòng kiểm tra lại thiết bị âm thanh của bạn.',
+            })
+          }
+
+          navigator.mediaDevices.getUserMedia(constraints).then(async (stream) => {
+            localStream = stream;
+            const audioTrack = stream.getAudioTracks()[0];
+            if (audioTrack) audioTrack.enabled = false;
+            const local_vid_player = document.getElementById("local_video_player");
+            const local_video_stream_id = document.getElementById("local_video_stream_id");
+            local_vid_player.srcObject = stream;
+            local_video_stream_id.style.display = "inherit";
+            local_video_stream_id.querySelector(".bottom_absolute_wrap").querySelector(".user_name_wrap").innerHTML = getDisplayName;
+            local_video_stream_id.querySelector(".absolute_wrap").childNodes[0].innerHTML = getDisplayName;
+            local_video_stream_id.querySelector(".absolute_wrap").querySelector(".user_name_wrap_offvid").innerHTML = getDisplayName;
+            handleSockets(getDisplayName);
+          }).catch((error) => {
+            console.error("Error accessing microphone:", error);
+            Swal.fire({
+              icon: 'error',
+              title: 'Oops...',
+              text: `Lỗi khi truy cập thiết bị: ${error.message}, vui lòng kiểm tra lại thiết bị của bạn.`,
+            })
+          });
+        }).catch((error) => {
+          console.error("Error checking devices:", error);
+          Swal.fire({
+            icon: 'error',
+            title: 'Oops...',
+            text: `Lỗi khi kiểm tra thiết bị: ${error.message}, vui lòng kiểm tra lại thiết bị của bạn.`,
+          })
+        });
+      } else {
+        alert("Display Name not found!");
+      }
+    }
+
+
+    function startCall() {
+      getDisplayName = userName;
+      localUserName = `${getDisplayName}(Me)`;
+      if (getDisplayName && getDisplayName.trim().length > 0) {
+        navigator.mediaDevices
+          .getUserMedia(constraints)
+          .then(async (stream) => {
+            localStream = stream;
+            const audioTrack = stream.getAudioTracks()[0];
+            audioTrack.enabled = true; // Đảm bảo audio được bật
+            handleSockets(getDisplayName); // Xử lý kết nối sockets với tên hiển thị của người dùng
+          })
+          .catch((error) => {
+            console.error("Error accessing microphone:", error);
+            alert("Could not access the microphone.");
+          });
+      } else {
+        alert("Display Name not found!");
+      }
+    }
+
+    // if iceCandidate event
+    function gotIceCandidate(event, connSocketId) {
+      if (event.candidate != null) {
+        socket.emit("got-iceCandiate", {
+          ice: event.candidate,
+          to_connSocketId: connSocketId
+        });
+      }
+    }
+    //   if receive track from new connection
+    function gotRemoteStream(event, connSocketId) {
+      if (event.track.kind === "video") {
+        // create new video html element
+        var vidElement = document.createElement("video");
+        vidElement.setAttribute("autoplay", "");
+        vidElement.setAttribute("muted", "");
+        vidElement.setAttribute("class", "video_player_wrap");
+        vidElement.srcObject = event.streams[0];
+        //  remote div container
+        var vidContainer = document.createElement("div");
+        vidContainer.setAttribute("id", `remoteVideo_${connSocketId}`);
+        vidContainer.setAttribute("class", "video_stream_wrap d-none");
+        vidContainer.appendChild(vidElement);
+        //   bottom control div
+        let BottomabsoluteDiv = document.createElement("div");
+        BottomabsoluteDiv.setAttribute("class", "bottom_absolute_wrap");
+        // label append
+        let labelElement = document.createElement("h5");
+        labelElement.setAttribute("class", "user_name_wrap");
+        labelElement.innerHTML = remoteStreams[connSocketId].displayName;
+        BottomabsoluteDiv.appendChild(labelElement);
+
+        // mic button append
+        const MicButton = document.createElement("button");
+        MicButton.setAttribute("class", "btn");
+        MicButton.style.cursor = "no-drop";
+        const MicIcon = document.createElement("span");
+        MicIcon.setAttribute("class", "material-symbols-outlined");
+
+        MicIcon.innerHTML = remoteStreams[connSocketId].mic
+          ? "mic"
+          : "mic_off";
+        MicButton.append(MicIcon);
+        BottomabsoluteDiv.append(MicButton);
+        // screen_status
+        const absolute_wrap = document.createElement("div");
+        absolute_wrap.setAttribute("class", "absolute_wrap");
+
+        // video disabled screen div
+        const absolute_wrap_h3 = document.createElement("h3");
+        absolute_wrap_h3.innerHTML = remoteStreams[connSocketId].displayName;
+        absolute_wrap.appendChild(absolute_wrap_h3);
+        const absolute_wrap_h4 = document.createElement("h4");
+        absolute_wrap.appendChild(absolute_wrap_h4);
+
+        vidContainer.appendChild(absolute_wrap);
+        vidContainer.appendChild(BottomabsoluteDiv);
+        //   append a new remote video in streams_wrap
+        document.getElementById("streams_wrap").appendChild(vidContainer);
+        if (typeCall == 'voice') {
+          const remoteVideo = document.getElementById('remoteVideo_' + connSocketId);
+          if (remoteVideo) {
+            const absoluteWrap = remoteVideo.querySelector('.absolute_wrap');
+            if (absoluteWrap) {
+              absoluteWrap.style.display = 'flex';
+            }
+          }
+        }
+      } else if (event.track.kind === "audio") {
+        // if audio track receive
+        let vidContainer = document.createElement("div");
+        let AudioElement = document.createElement("audio");
+        AudioElement.setAttribute("autoplay", "");
+        AudioElement.setAttribute("controls", "");
+        AudioElement.setAttribute("class", `qremoteAudio_${connSocketId}`);
+        AudioElement.style.display = "none";
+        AudioElement.srcObject = null;
+        AudioElement.srcObject = event.streams[1];
+        AudioElement.load();
+        vidContainer.appendChild(AudioElement);
+      }
+    }
+
+    //   handle video screen enable and disable
+    async function disenAbsoluteWrap(connSocketId, status = false) {
+      let local_absolute_wrap = null;
+      if (connSocketId.trim().length > 0) {
+        local_absolute_wrap = await document
+          .querySelector(`#remoteVideo_${connSocketId}`)
+          .querySelector(".absolute_wrap");
+        local_absolute_wrap.childNodes[0].innerHTML =
+          remoteStreams[connSocketId].displayName;
+        local_absolute_wrap.childNodes[0].innerHTML =
+          localVideoStreamType === "screen"
+            ? "Screen Sharing"
+            : "Video Disabled";
+        if (status) {
+          local_absolute_wrap.style.display = "flex";
+        } else {
+          local_absolute_wrap.style.display = "none";
+        }
+      } else {
+        local_absolute_wrap = await document
+          .querySelector("#local_video_stream_id")
+          .querySelector(".absolute_wrap");
+        local_absolute_wrap.childNodes[0].innerHTML =
+          localVideoStreamType === "screen"
+            ? "Screen Sharing"
+            : "Video Disabled";
+        if (status) {
+          local_absolute_wrap.style.display = "flex";
+        } else {
+          local_absolute_wrap.style.display = "none";
+        }
+        if (localVideoStreamType !== "screen") {
+          for (let connSocketId of Object.keys(remoteStreams)) {
+            socket.emit("video_changed", {
+              to_connSocketId: connSocketId,
+              status
+            });
+          }
+        }
+      }
+    }
+
+    // if mic on off notify to all connected peers
+    async function MicChangedUpdated(connSocketId, status = false) {
+      const remoteMicElement = await document
+        .querySelector(`#remoteVideo_${connSocketId}`)
+        .querySelector(".bottom_absolute_wrap")
+        .querySelector(".btn span.material-symbols-outlined");
+      if (status) {
+        remoteMicElement.innerHTML = "mic";
+      } else {
+        remoteMicElement.innerHTML = "mic_off";
+      }
+    }
+
+    //   initial new peer coonection when new user connected
+    async function setUpPeer(connSocketId, displayName, initCall = false, mic = false, user) {
+      remoteStreams[connSocketId] = {
+        displayName: displayName,
+        peerConn: new RTCPeerConnection(peerConnectionConfig),
+        show: false,
+        mic,
+        user
+      };
+
+      function sendPing(channel) {
+        if (channel.readyState === "open") {
+          const timestamp = Date.now();
+          channel.send(JSON.stringify({ type: "ping", timestamp }));
+
+          setTimeout(() => sendPing(channel), 5000);
+        } else {
+          console.log(
+            "DataChannel is not open. Will retry ping once it opens."
+          );
+        }
+      }
+
+      let dataChannel;
+      if (initCall) {
+        dataChannel =
+          remoteStreams[connSocketId].peerConn.createDataChannel(
+            "pingChannel"
+          );
+
+        dataChannel.onopen = () => {
+          console.log("DataChannel is open for ping-pong.");
+          sendPing(dataChannel);
+        };
+
+        dataChannel.onmessage = (event) => {
+          const message = JSON.parse(event.data);
+          if (message.type === "ping") {
+            dataChannel.send(
+              JSON.stringify({ type: "pong", timestamp: message.timestamp })
+            );
+          } else if (message.type === "pong") {
+            const latency = Date.now() - message.timestamp;
+            console.log(`Latency to ${displayName} (ID: ${connSocketId}): ${latency} ms`);
+            console.log("remoteStreams", remoteStreams);
+          }
+        };
+      } else {
+        // Peer nhận kết nối sẽ nhận DataChannel qua ondatachannel
+        remoteStreams[connSocketId].peerConn.ondatachannel = (event) => {
+          dataChannel = event.channel;
+
+          dataChannel.onopen = () => {
+            console.log("DataChannel is open for ping-pong (ondatachannel).");
+            sendPing(dataChannel);
+          };
+
+          dataChannel.onmessage = (event) => {
+            const message = JSON.parse(event.data);
+            if (message.type === "ping") {
+              dataChannel.send(
+                JSON.stringify({ type: "pong", timestamp: message.timestamp })
+              );
+            } else if (message.type === "pong") {
+              const latency = Date.now() - message.timestamp;
+              console.log(`Latency to ${displayName} (ID: ${connSocketId}): ${latency} ms`);
+              console.log("remoteStreams", remoteStreams);
+            }
+          };
+        };
+      }
+      $('#remoteVideo_' + connSocketId).css('display', 'none');
+      console.log("remoteStreams", remoteStreams);
+      // Các thiết lập khác
+      remoteStreams[connSocketId].peerConn.onicecandidate = (event) =>
+        gotIceCandidate(event, connSocketId);
+      remoteStreams[connSocketId].peerConn.ontrack = (event) =>
+        gotRemoteStream(event, connSocketId);
+      remoteStreams[connSocketId].peerConn.addStream(localStream);
+
+      if (initCall) {
+        remoteStreams[connSocketId].peerConn.createOffer()
+          .then((description) => {
+            remoteStreams[connSocketId].peerConn
+              .setLocalDescription(description)
+              .then(() => {
+                socket.emit("save-offer:on-yoyr-remote", {
+                  to_connSocketId: connSocketId,
+                  offer: remoteStreams[connSocketId].peerConn.localDescription
+                });
+              });
+          })
+          .catch((error) => {
+            console.log(error);
+          });
+      }
+    }
+
+    async function get_info_user(id) {
+      // return new Promise((resolve, reject) => {
+      //   $.ajax({
+      //     url: '/api/v1/profile/' + id,
+      //     headers: {
+      //       'Authorization': `Bearer ${window.localStorage.getItem("token")}`
+      //     },
+      //     type: 'GET',
+      //     success: function (data) {
+      //       resolve(data.data);
+      //     },
+      //     error: function (error) {
+      //       console.log(error);
+      //       reject(error);
+      //     }
+      //   });
+      // });
+      return {
+        id: 123,
+        first_name: 'listener',
+        last_name: 'ur mother',
+        avatar: 'avt'
+      }
+    }
+
+    // handle all socket.io emit
+    async function handleSockets(displayName) {
+      //
+      socket = await io(call_domain, {
+        query: {
+          desplayName: displayName,
+          groupID: conversationId,
+          id: current_user?.id,
+        }
+      });
+
+      socket.on("group:joined", async (data) => {
+        console.log("new user joined", data);
+        groupCalls = data.groupCalls;
+        hostId = groupCalls.hostId;
+        var hostUser = await get_info_user(hostId);
+        // var receiverUserId = groupCalls.users.find(user => user.user_id != groupCalls.hostId).user_id;
+        var receiverUser = await get_info_user(0);
+        console.log("hostUser", hostId);
+        // console.log("hostUser", receiverUserId);
+        avatar = hostUser.avatar;
+        if (userId == hostId) {
+          document.querySelector('.modal-waiting').style.display = 'flex';
+          document.getElementById('streams_wrap').style.display = 'none';
+          $('.receiver-name').text(receiverUser.first_name + ' ' + receiverUser.last_name);
+          $('.image-receiver').attr('src', receiverUser.avatar);
+          if (typeCall) {
+            $('.btn-waiting-call').click();
+          }
+        } else {
+          $('.image-host').attr('src', avatar);
+          $('.text-title-call').text(hostUser.first_name + ' ' + hostUser.last_name + ' đang gọi...');
+          if (typeCall) {
+            $('.btn-confirm').click();
+          }
+          document.getElementById("streams_wrap").style.display = "none";
+        }
+      });
+
+      socket.on("new-user:join", async (data) => {
+        console.log("new user joined", data);
+        const { connSocketId, displayName, mic, user } = data;
+        setUpPeer(connSocketId, displayName, false, mic, user);
+        const audioTrack = await localStream.getAudioTracks()[0];
+        socket.emit("new-user:intial-done", {
+          to_connSocketId: connSocketId,
+          mic: audioTrack.enabled
+        });
+      });
+
+      socket.on("got-iceCandiate", (data) => {
+        const { ice, from_connSocketId } = data;
+        remoteStreams[from_connSocketId].peerConn.addIceCandidate(
+          new RTCIceCandidate(ice)
+        );
+      });
+
+      socket.on("you:intial-done", (data) => {
+        const { from_connSocketId, displayName, mic, user } = data;
+        setUpPeer(from_connSocketId, displayName, true, mic, user);
+      });
+
+      socket.on("start-call", (data) => {
+        console.log("start-call", data);
+        document.querySelector(".modal-waiting").style.display = "none";
+        document.getElementById("streams_wrap").style.display = "flex";
+        $('.button-container').removeClass('d-none');
+        // startVideo();
+      });
+
+      socket.on("save-offer:on-yoyr-remote", (data) => {
+        const { from_connSocketId, offer } = data;
+        remoteStreams[from_connSocketId].peerConn.setRemoteDescription(new RTCSessionDescription(offer)).then(() => {
+          remoteStreams[from_connSocketId].peerConn.createAnswer().then((ans) => {
+            remoteStreams[from_connSocketId].peerConn.setLocalDescription(ans).then(() => {
+              socket.emit("save-ans:your-remote", {
+                to_connSocketId: from_connSocketId,
+                ans: remoteStreams[from_connSocketId].peerConn
+                  .localDescription
+              });
+            });
+          });
+        });
+      });
+
+      socket.on("save-ans:your-remote", (data) => {
+        const { from_connSocketId, ans } = data;
+        remoteStreams[from_connSocketId].peerConn.setRemoteDescription(
+          new RTCSessionDescription(ans)
+        );
+      });
+
+      socket.on("video_changed", (data) => {
+        const { from_connSocketId, status } = data;
+        disenAbsoluteWrap(from_connSocketId, status);
+      });
+      socket.on("mic_update", (data) => {
+        const { from_connSocketId, status } = data;
+        MicChangedUpdated(from_connSocketId, status);
+      });
+
+      socket.on("accept-call", (data) => {
+        console.log("accept-call", data);
+        console.log("groupCalls", groupCalls);
+        $('#waiting_call').modal('hide');
+        document.querySelector(".modal-waiting").style.display = "none";
+        document.getElementById("streams_wrap").style.display = "flex";
+        $('.button-container').removeClass('d-none');
+        $('.video_stream_wrap').removeClass('d-none');
+      });
+
+      socket.on("user:disconnected", async ({ from_connSocketId, userId, groupCalls }) => {
+        console.log("user disconnected", userId);
+        groupCalls = groupCalls;
+        const elementToRemove = document.getElementById(`remoteVideo_${from_connSocketId}`);
+        if (elementToRemove) {
+          document.getElementById("streams_wrap").removeChild(elementToRemove);
+        } else {
+          console.warn(`Element remoteVideo_${from_connSocketId} not found`);
+        }
+        await remoteStreams[from_connSocketId].peerConn.close();
+        delete remoteStreams[from_connSocketId];
+        console.log("deleted user ", from_connSocketId);
+      });
+    }
+
+    function userAcceptCall() {
+      console.log("userAcceptCall");
+      document.getElementById("streams_wrap").style.display = "flex";
+      socket.emit("accept-call", { userName: userName });
+    }
+
+    //   handle buttons click event
+    async function handleEndCall() {
+      socket.disconnect();
+      for (let connSocketId of Object.keys(remoteStreams)) {
+        remoteStreams[connSocketId].peerConn.close();
+        document.getElementById("streams_wrap").removeChild(document.getElementById(`remoteVideo_${connSocketId}`));
+        delete remoteStreams[connSocketId];
+      }
+      window.location.reload();
+    }
+
+    async function handleMuteUnMute() {
+      if (localStream) {
+        let audioTrack = await localStream.getAudioTracks()[0];
+        if (audioTrack) {
+          audioTrack.enabled = !audioTrack.enabled;
+          const audioControldiv = document.getElementById("audio-control");
+          if (audioTrack.enabled) {
+            audioControldiv.innerHTML = "mic";
+            $("#offVoice").addClass("d-none");
+            $("#onVoice").removeClass("d-none");
+          } else {
+            audioControldiv.innerHTML = "mic_off";
+            $("#offVoice").removeClass("d-none");
+            $("#onVoice").addClass("d-none");
+          }
+
+          for (let connSocketId of Object.keys(remoteStreams)) {
+            socket.emit("mic_update", {
+              to_connSocketId: connSocketId,
+              status: audioTrack.enabled
+            });
+          }
+          return;
+        } else {
+          alert("aduio track not found");
+        }
+      } else {
+        alert("local stream not found");
+      }
+    }
+
+    $(document).on('click', '.handle-video', async function () {
+      await handleVideoOnOff();
+    });
+
+    async function handleVideoOnOff() {
+      const videoTrack = localStream.getTracks().find((track) => track.kind === "video");
+      videoTrack.enabled = !videoTrack.enabled;
+      $(this).addClass("d-none");
+      if (localVideoStreamType === "video" || localVideoStreamType === "none") {
+        const videoControlDiv = document.getElementById("video-control");
+        if (videoTrack.enabled) {
+          localVideoStreamType = "video";
+          videoControlDiv.innerHTML = "desktop_windows";
+          disenAbsoluteWrap("");
+          $("#offCamera").addClass("d-none");
+          $("#onCamera").removeClass("d-none");
+        } else {
+          localVideoStreamType = "none";
+          videoControlDiv.innerHTML = "desktop_access_disabled";
+          disenAbsoluteWrap("", true);
+          $("#offCamera").removeClass("d-none");
+          $("#onCamera").addClass("d-none");
+        }
+      } else if (localVideoStreamType === "screen") {
+        $("#offCamera").addClass("d-none");
+        $("#onCamera").removeClass("d-none");
+        if (localScreenShare) {
+          localScreenShare.getTracks().forEach((track) => track.stop());
+        }
+        const videoTrack = localStream.getTracks().find((track) => track.kind === "video");
+        videoTrack.enabled = true;
+        disenAbsoluteWrap("", false);
+        const ScreenShareIconControl = document.getElementById("control-screen-share");
+        for (let connSocketId of Object.keys(remoteStreams)) {
+          const preVideoTrack = remoteStreams[connSocketId].peerConn.getSenders().find((streamTrack) => streamTrack.track.kind === "video");
+          if (preVideoTrack) {
+            preVideoTrack.track.enabled = false;
+            preVideoTrack.replaceTrack(videoTrack);
+          } else {
+            alert("faild to update Screen Share");
+          }
+        }
+        ScreenShareIconControl.innerHTML = "stop_screen_share";
+        localVideoStreamType = "video";
+      }
+    }
+
+    async function handleScreenShareOnOff() {
+      if (localVideoStreamType !== "screen") {
+        navigator.mediaDevices.getDisplayMedia(constraints).then((screen) => {
+          localScreenShare = screen;
+          const videoScreenShareTrack = screen.getTracks().find((track) => track.kind === "video");
+          const ScreenShareIconControl = document.getElementById("control-screen-share");
+          const videoControlDiv = document.getElementById("video-control");
+          const videoControlChildSpan = videoControlDiv.childNodes[0];
+          for (let connSocketId of Object.keys(remoteStreams)) {
+            const preVideoTrack = remoteStreams[connSocketId].peerConn.getSenders().find((streamTrack) => streamTrack.track.kind === "video");
+            if (preVideoTrack) {
+              preVideoTrack.track.enabled = false;
+              preVideoTrack.replaceTrack(videoScreenShareTrack);
+            } else {
+              alert("faild to update Screen Share");
+            }
+          }
+          ScreenShareIconControl.innerHTML = "screen_share";
+          localVideoStreamType = "screen";
+          videoControlChildSpan.innerHTML = "desktop_access_disabled";
+          disenAbsoluteWrap("", true);
+        })
+          .catch((err) => {
+            handleVideoOnOff();
+          });
+      } else {
+        handleVideoOnOff();
+      }
+    }
+
+    const element = document.getElementById('local_video_stream_id');
+
+    let isDragging = false;
+    let offsetX = 0, offsetY = 0;
+
+    // Khi nhấn chuột xuống
+    element.addEventListener('mousedown', (event) => {
+      isDragging = true;
+      offsetX = event.clientX - element.offsetLeft;
+      offsetY = event.clientY - element.offsetTop;
+      element.style.cursor = 'grabbing'; // Thay đổi con trỏ khi đang kéo
+    });
+
+    // Khi di chuyển chuột
+    document.addEventListener('mousemove', (event) => {
+      if (!isDragging) return;
+      const x = event.clientX - offsetX;
+      const y = event.clientY - offsetY;
+      element.style.left = `${x}px`;
+      element.style.top = `${y}px`;
+    });
+
+    // Khi thả chuột
+    document.addEventListener('mouseup', () => {
+      isDragging = false;
+      element.style.cursor = 'grab'; // Trả lại con trỏ mặc định
+    });
+
+    function parseJwt(token) {
+      var base64Url = token.split(".")[1];
+      var base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+      var jsonPayload = decodeURIComponent(
+        window
+          .atob(base64)
+          .split("")
+          .map(function (c) {
+            return "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2);
+          })
+          .join("")
+      );
+      return JSON.parse(jsonPayload);
+    }
+  </script>
+
+</body>
+
+</html>
