@@ -1,19 +1,24 @@
 class GroupVideoCall {
-  constructor(socket, localVideo, remoteVideosContainer) {
+  constructor(socket, localVideo, user, videoGridManager) {
     this.socket = socket;
     this.localVideo = localVideo;
-    this.remoteVideosContainer = remoteVideosContainer;
+    // this.remoteVideosContainer = remoteVideosContainer;
     this.localStream = null;
-    this.peers = new Map(); // Map of userId -> RTCPeerConnection
-    this.remoteVideos = new Map(); // Map of userId -> video element
+    this.peers = new Map();
+
     this.currentRoom = null;
-    this.userId = null;
+
+    this.user = user;
+    this.userId = this.user.id ?? 0;
+
+    this.videoGridManager = videoGridManager;
 
     this.setupSocketListeners();
   }
 
   // Cấu hình STUN/TURN servers
-  createPeerConnection(remoteUserId) {
+  createPeerConnection(remoteUser) {
+    const remoteUserId = remoteUser.id;
     const configuration = {
       iceServers: [
         { urls: 'stun:stun.l.google.com:19302' },
@@ -38,7 +43,7 @@ class GroupVideoCall {
     // Nhận remote stream
     peerConnection.ontrack = (event) => {
       console.log(`Received remote stream from ${remoteUserId}`);
-      this.handleRemoteStream(remoteUserId, event.streams[0]);
+      this.handleRemoteStream(remoteUser, event.streams[0]);
     };
 
     // Theo dõi trạng thái kết nối
@@ -66,11 +71,6 @@ class GroupVideoCall {
 
   // Thiết lập các socket listeners
   setupSocketListeners() {
-    // Nhận thông tin user ID
-    this.socket.on('user-id', (data) => {
-      this.userId = data.userId;
-      console.log('My user ID:', this.userId);
-    });
 
     // Nhận danh sách users trong room
     this.socket.on('room-users', (data) => {
@@ -80,8 +80,8 @@ class GroupVideoCall {
 
     // Có user mới join
     this.socket.on('user-joined', (data) => {
-      console.log('User joined:', data.userId);
-      this.handleUserJoined(data.userId);
+      console.log('User joined:', data.user);
+      this.handleUserJoined(data.user);
     });
 
     // User leave
@@ -107,20 +107,71 @@ class GroupVideoCall {
       console.log('Received ICE candidate from:', data.fromUserId);
       await this.handleIceCandidate(data.candidate, data.fromUserId);
     });
+
+    this.socket.on('camera-toggled', (data) => {
+      this.toggleCameraForUser(data.userId, data.enabled);
+    });
   }
 
   // Bắt đầu local stream
-  async _startLocalStream() {
+  async _startLocalStream(preferVideo = false) {
+    if (!preferVideo) {
+      try {
+        this.localStream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true,
+            sampleRate: 44100
+          },
+          video: false
+        });
+
+        anmsToggleFloatingVideo(false);
+        return;
+      } catch (audioError) {
+        throw new Error('Không thể lấy audio: ' + audioError.message);
+      }
+    }
+
     try {
-      this.localStream = await navigator.mediaDevices.getUserMedia({
-        video: { width: 640, height: 480 },
-        audio: true
-      });
+      const isMobile = /Android|iPhone/i.test(navigator.userAgent);
+      const constraints = {
+        video: {
+          width: isMobile ? { ideal: 1280 } : { max: 1920 },
+          height: isMobile ? { ideal: 720 } : { max: 1080 },
+          frameRate: isMobile ? { ideal: 60 } : { max: 60 }
+        },
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+          sampleRate: 44100
+        }
+      };
+
+      this.localStream = await navigator.mediaDevices.getUserMedia(constraints);
 
       this.localVideo.srcObject = this.localStream;
       console.log('Local stream started');
     } catch (error) {
-      console.error('Error accessing media devices:', error);
+      console.log('Video không khả dụng, fallback to audio:', error.message);
+      try {
+        this.localStream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true,
+            sampleRate: 44100
+          },
+          video: false
+        });
+
+        this.localVideo.srcObject = this.localStream;
+        anmsToggleFloatingVideo(false);
+      } catch (audioError) {
+          throw new Error('Không thể lấy audio: ' + audioError.message);
+      }
     }
   }
 
@@ -128,24 +179,26 @@ class GroupVideoCall {
   async joinRoom(roomId) {
     await this._startLocalStream();
     this.currentRoom = roomId;
-    this.socket.emit('join-room', { roomId });
+    this.socket.emit('join-room', { roomId, userInfo: this.user });
   }
 
   // Xử lý danh sách users trong room
   async _handleRoomUsers(users) {
     // Tạo kết nối với tất cả users đã có trong room
-    for (const userId of users) {
-      if (userId !== this.userId) {
-        await this.createPeerConnectionForUser(userId);
-        await this.initiateCallToUser(userId);
+    console.log('received room users:', users);
+    for (const user of users) {
+      if (user.id !== this.userId) {
+        await this.createPeerConnectionForUser(user);
+        await this.initiateCallToUser(user.id);
       }
     }
   }
 
   // Xử lý user mới join
-  async handleUserJoined(userId) {
+  async handleUserJoined(user) {
+    const userId = user.id;
     if (userId !== this.userId) {
-      await this.createPeerConnectionForUser(userId);
+      await this.createPeerConnectionForUser(user);
       // Không cần initiate call, user mới sẽ gọi đến chúng ta
     }
   }
@@ -157,9 +210,10 @@ class GroupVideoCall {
   }
 
   // Tạo peer connection cho user cụ thể
-  async createPeerConnectionForUser(userId) {
+  async createPeerConnectionForUser(user) {
+    const userId = user.id;
     if (!this.peers.has(userId)) {
-      const peerConnection = this.createPeerConnection(userId);
+      const peerConnection = this.createPeerConnection(user);
       this.peers.set(userId, peerConnection);
       console.log(`Created peer connection for ${userId}`);
     }
@@ -241,34 +295,8 @@ class GroupVideoCall {
   }
 
   // Xử lý remote stream
-  handleRemoteStream(userId, stream) {
-    let videoElement = this.remoteVideos.get(userId);
-
-    if (!videoElement) {
-      // Tạo video element mới
-      videoElement = document.createElement('video');
-      videoElement.autoplay = true;
-      videoElement.playsInline = true;
-      videoElement.muted = false;
-      videoElement.id = `remote-video-${userId}`;
-      videoElement.className = 'remote-video';
-
-      // Thêm label hiển thị user ID
-      const container = document.createElement('div');
-      container.className = 'video-container';
-
-      const label = document.createElement('div');
-      label.className = 'video-label';
-      label.textContent = `User ${userId}`;
-
-      container.appendChild(videoElement);
-      container.appendChild(label);
-
-      this.remoteVideosContainer.appendChild(container);
-      this.remoteVideos.set(userId, videoElement);
-    }
-
-    videoElement.srcObject = stream;
+  handleRemoteStream(remoteUser, stream ) {
+    this.videoGridManager.addRemoteVideo(remoteUser, stream);
   }
 
   // Xóa peer connection
@@ -283,15 +311,7 @@ class GroupVideoCall {
 
   // Xóa remote video
   removeRemoteVideo(userId) {
-    const videoElement = this.remoteVideos.get(userId);
-    if (videoElement) {
-      const container = videoElement.parentElement;
-      if (container) {
-        container.remove();
-      }
-      this.remoteVideos.delete(userId);
-      console.log(`Removed remote video for ${userId}`);
-    }
+    this.videoGridManager.removeRemoteVideo(userId);
   }
 
   // Xử lý peer disconnected
@@ -312,14 +332,7 @@ class GroupVideoCall {
       });
       this.peers.clear();
 
-      // Cleanup remote videos
-      this.remoteVideos.forEach((videoElement, userId) => {
-        const container = videoElement.parentElement;
-        if (container) {
-          container.remove();
-        }
-      });
-      this.remoteVideos.clear();
+      this.videoGridManager.clearRemoteVideos();
 
       // Stop local stream
       if (this.localStream) {
@@ -334,12 +347,23 @@ class GroupVideoCall {
     }
   }
 
+  toggleCameraForUser(userId, enabled) {
+    this.videoGridManager.toggleRemoteVideo(userId, enabled);
+  }
+
   // Toggle camera
   toggleCamera() {
     if (this.localStream) {
       const videoTrack = this.localStream.getVideoTracks()[0];
       if (videoTrack) {
         videoTrack.enabled = !videoTrack.enabled;
+
+        anmsToggleFloatingVideo(videoTrack.enabled);
+
+        this.socket.emit('camera-toggled', {
+          userId: this.userId,
+          enabled: videoTrack.enabled
+        });
         return videoTrack.enabled;
       }
     }
@@ -376,5 +400,3 @@ class GroupVideoCall {
     return null;
   }
 }
-
-export { GroupVideoCall };
